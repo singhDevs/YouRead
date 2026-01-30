@@ -1,0 +1,7 @@
+output:
+  directory: ./output
+
+llm:
+  model: gemini-2.5-flash
+  max_tokens: 8000
+  temperature: 0.3
