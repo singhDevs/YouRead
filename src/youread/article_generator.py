@@ -2,8 +2,9 @@
 
 import math
 
-from google import genai
-from google.genai import types
+from openai import OpenAI
+# from google import genai
+# from google.genai import types
 from pathlib import Path
 from typing import Optional, Literal
 from importlib.resources import files
@@ -168,7 +169,8 @@ def generate_article(
         Exception: If the API call fails.
     """
     # Configure the API
-    client = genai.Client(api_key=api_key)
+    client = OpenAI(api_key=api_key)
+    # client = genai.Client(api_key=api_key)
 
     # Compose the system prompt
     system_prompt = compose_system_prompt(
@@ -187,15 +189,21 @@ def generate_article(
 """
 
     # Generate the article with specified config
-    response = client.models.generate_content(
-        model=model,
-        config=types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=temperature),
-        contents=user_prompt
+    response = client.responses.create(
+        model="gpt-5",
+        instructions=system_prompt,
+        input=user_prompt,
     )
 
+    # response = client.models.generate_content(
+    #     model=model,
+    #     config=types.GenerateContentConfig(
+    #         system_instruction=system_prompt,
+    #         temperature=temperature),
+    #     contents=user_prompt
+    # )
+
     # Calculate and insert accurate reading time
-    article = insert_reading_time(response.text)
+    article = insert_reading_time(response.output_text)
 
     return article

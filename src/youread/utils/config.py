@@ -29,7 +29,7 @@ class Config:
     """Application configuration container."""
     output: OutputConfig
     llm: LLMConfig
-    gemini_api_key: str
+    llm_api_key: str
 
 
 def load_config(config_path: Optional[Path] = None) -> Config:
@@ -44,7 +44,7 @@ def load_config(config_path: Optional[Path] = None) -> Config:
 
     Raises:
         FileNotFoundError: If settings.yaml doesn't exist.
-        ValueError: If GEMINI_API_KEY is not set.
+        ValueError: If GPT_API_KEY is not set.
     """
     # Load .env file
     load_dotenv()
@@ -63,10 +63,10 @@ def load_config(config_path: Optional[Path] = None) -> Config:
         settings = yaml.safe_load(f)
 
     # Get API key from environment
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("GPT_API_KEY")
     if not api_key:
         raise ValueError(
-            "GEMINI_API_KEY not found. "
+            "GPT_API_KEY not found. "
             "Please set it in your .env file or environment variables."
         )
 
@@ -79,9 +79,9 @@ def load_config(config_path: Optional[Path] = None) -> Config:
             directory=Path(output_settings.get("directory", "./output"))
         ),
         llm=LLMConfig(
-            model=llm_settings.get("model", "gemini-2.0-flash"),
+            model=llm_settings.get("model", "gpt-5.2"),
             max_tokens=llm_settings.get("max_tokens", 8000),
             temperature=llm_settings.get("temperature", 0.3),
         ),
-        gemini_api_key=api_key,
+        llm_api_key=api_key,
     )

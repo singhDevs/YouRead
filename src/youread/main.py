@@ -69,7 +69,7 @@ def main(
     mode: str = typer.Option(
         "standard",
         "--mode", "-m",
-        help="Article generation mode: summary (~30% read time), standard (~50-60%), detailed (~80-90%).",
+        help="Article generation mode: summary (key points only), standard (full coverage), detailed (enhanced with examples).",
     ),
     custom_prompt: Optional[str] = typer.Option(
         None,
@@ -103,7 +103,7 @@ def main(
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Display mode
-        mode_desc = {"summary": "~30% read time", "standard": "~50-60% read time", "detailed": "~80-90% read time"}
+        mode_desc = {"summary": "key points, fast read", "standard": "full coverage, balanced", "detailed": "enhanced with examples"}
         console.print(f"[dim]Mode: {mode} ({mode_desc[mode]})[/dim]")
         if custom_prompt:
             console.print(f"[dim]Custom: {custom_prompt[:50]}{'...' if len(custom_prompt) > 50 else ''}[/dim]")
@@ -178,11 +178,11 @@ def main(
             TimeElapsedColumn(),
             console=console,
         ) as progress:
-            task = progress.add_task("Generating article with Gemini...", total=None)
+            task = progress.add_task("Generating article with OpenAI model...", total=None)
             article = generate_article(
                 transcript_text=full_text,
                 video_info=video_info,
-                api_key=config.gemini_api_key,
+                api_key=config.llm_api_key,
                 video_id=video_id,
                 model=config.llm.model,
                 max_tokens=config.llm.max_tokens,
