@@ -1,15 +1,13 @@
-"""Article generation using Gemini API."""
+"""Article generation using LLM providers."""
 
 import math
 
-from openai import OpenAI
-# from google import genai
-# from google.genai import types
 from pathlib import Path
 from typing import Optional, Literal
 from importlib.resources import files
 
 from .models import VideoInfo
+from .providers import call_llm
 
 
 # Valid mode choices
@@ -141,22 +139,24 @@ The user has provided the following additional instructions. Follow them while m
 def generate_article(
     transcript_text: str,
     video_info: VideoInfo,
+    provider: str,
     api_key: str,
     video_id: Optional[str] = None,
-    model: str = "gemini-2.5-flash",
+    model: str = "gpt-5",
     max_tokens: int = 8000,
     temperature: float = 0.3,
     mode: ArticleMode = "standard",
     custom_prompt: Optional[str] = None,
 ) -> str:
-    """Generate a readable article from a video transcript using Gemini.
+    """Generate a readable article from a video transcript.
 
     Args:
         transcript_text: The full transcript text.
         video_info: Video metadata (title, channel).
-        api_key: Gemini API key.
+        provider: LLM provider name (e.g., "openai", "gemini").
+        api_key: API key for the provider.
         video_id: Video ID for source link.
-        model: Gemini model to use.
+        model: Model identifier to use.
         max_tokens: Maximum tokens in the response.
         temperature: Sampling temperature (0.0-1.0).
         mode: Article generation mode (summary, standard, detailed).
@@ -168,10 +168,6 @@ def generate_article(
     Raises:
         Exception: If the API call fails.
     """
-    # Configure the API
-    client = OpenAI(api_key=api_key)
-    # client = genai.Client(api_key=api_key)
-
     # Compose the system prompt
     system_prompt = compose_system_prompt(
         mode=mode,
@@ -188,22 +184,18 @@ def generate_article(
 {transcript_text}
 """
 
-    # Generate the article with specified config
-    response = client.responses.create(
-        model="gpt-5",
-        instructions=system_prompt,
-        input=user_prompt,
+    # Generate the article via provider dispatch
+    raw_response = call_llm(
+        provider=provider,
+        api_key=api_key,
+        model=model,
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        max_tokens=max_tokens,
+        temperature=temperature,
     )
 
-    # response = client.models.generate_content(
-    #     model=model,
-    #     config=types.GenerateContentConfig(
-    #         system_instruction=system_prompt,
-    #         temperature=temperature),
-    #     contents=user_prompt
-    # )
-
     # Calculate and insert accurate reading time
-    article = insert_reading_time(response.output_text)
+    article = insert_reading_time(raw_response)
 
     return article

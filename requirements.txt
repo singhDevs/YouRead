@@ -1,6 +1,6 @@
 # Core dependencies
 youtube-transcript-api>=0.6.0    # Transcript extraction from YouTube
-google-generativeai>=0.8.0       # Gemini API client
+google-genai>=1.0.0              # Google GenAI SDK (Gemini)
 python-dotenv>=1.0.0             # Load environment variables from .env
 pyyaml>=6.0                      # YAML config file parsing
 typer>=0.9.0                     # CLI framework

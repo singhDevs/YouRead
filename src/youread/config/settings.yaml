@@ -1,7 +1,9 @@
-output:
-  directory: ./output
-
 llm:
-  model: gemini-2.5-flash
+  provider: openai
+  model: gpt-5
   max_tokens: 8000
   temperature: 0.3
+output:
+  directory: ./output
+processing:
+  remove_sponsors: true
