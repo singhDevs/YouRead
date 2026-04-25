@@ -164,10 +164,15 @@ def config_set(
     ),
 ) -> None:
     """Update YouRead configuration. Settings are persisted to config files."""
-    if all(v is None for v in [
-        provider, model, max_tokens, temperature,
-        set_api_key, output_dir, remove_sponsors
-    ]):
+    if (
+        provider is None
+        and model is None
+        and max_tokens is None
+        and temperature is None
+        and not set_api_key
+        and output_dir is None
+        and remove_sponsors is None
+    ):
         console.print("[yellow]No options provided.[/yellow] Usage examples:")
         console.print("  youread config set --provider openai --model gpt-5")
         console.print("  youread config set --provider openai --set-api-key")
