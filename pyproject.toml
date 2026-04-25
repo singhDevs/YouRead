@@ -1,6 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "youread"
 version = "0.1.0"
+description = "Convert YouTube videos into comprehensive, reading-optimized markdown articles"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    {name = "Guransh Singh"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Topic :: Software Development :: Utilities",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "youtube-transcript-api>=0.6.0",
+    "google-genai>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "openai>=1.0.0",
+]
 
 [project.scripts]
 youread = "youread.main:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
