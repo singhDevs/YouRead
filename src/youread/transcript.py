@@ -25,7 +25,7 @@ def fetch_transcript(
     Args:
         video_id: The YouTube video ID (11 characters).
         languages: Preferred languages in order of priority.
-                   Defaults to ["en"] (English).
+                   Defaults to ["en"] (English only).
 
     Returns:
         List of TranscriptSegment objects containing the full transcript.
