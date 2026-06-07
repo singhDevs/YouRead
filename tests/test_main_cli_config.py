@@ -44,7 +44,11 @@ class MainCliConfigTests(unittest.TestCase):
         self.assertNotIn("sk-super-secret-value", result.stdout)
 
     def test_config_set_help_uses_secure_api_key_prompt(self) -> None:
-        result = self.runner.invoke(app, ["config", "set", "--help"])
+        result = self.runner.invoke(
+            app,
+            ["config", "set", "--help"],
+            env={"TYPER_USE_RICH": "0"},
+        )
         self.assertEqual(result.exit_code, 0)
         self.assertIn("--set-api-key", result.stdout)
         self.assertNotIn("--api-key", result.stdout)
