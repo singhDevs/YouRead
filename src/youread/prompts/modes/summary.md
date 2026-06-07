@@ -16,7 +16,7 @@
 - Secondary arguments and tangential opinions
 - Extended explanations, context, or background
 - All but the single best joke or personality moment
-- Code examples (mention concepts only, unless code IS the point)
+- Supporting/illustrative code (only include code the speaker actually writes or shows; describe everything else in prose)
 - Rants, anecdotes, and asides
 
 **Critical instruction:** Do NOT compress everything into fewer words. Instead, PICK what matters and explain those points clearly. A reader should understand the core message without feeling rushed or bombarded.
