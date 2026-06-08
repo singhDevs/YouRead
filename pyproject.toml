@@ -35,3 +35,6 @@ youread = "youread.main:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+youread = ["config/settings.yaml", "prompts/*.md", "prompts/modes/*.md"]

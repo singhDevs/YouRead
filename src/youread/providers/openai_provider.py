@@ -1,6 +1,7 @@
 """OpenAI provider for YouRead."""
 
 from openai import OpenAI
+from openai import APIError
 
 
 def call_openai(
@@ -26,12 +27,53 @@ def call_openai(
     """
     client = OpenAI(api_key=api_key)
 
-    response = client.responses.create(
+    kwargs: dict = dict(
         model=model,
         instructions=system_prompt,
         input=user_prompt,
-        max_output_tokens=max_tokens,
-        temperature=temperature,
     )
 
+    opt_params: dict[str, object] = {}
+    if max_tokens is not None:
+        opt_params["max_output_tokens"] = max_tokens
+    if temperature is not None:
+        opt_params["temperature"] = temperature
+
+    kwargs.update(opt_params)
+    fallback_keys = list(opt_params.keys())
+
+    response = _call_responses(client, kwargs, fallback_keys)
     return response.output_text
+
+
+def _call_responses(
+    client: OpenAI,
+    kwargs: dict,
+    fallback_keys: list[str],
+) -> object:
+    """Call responses.create, retrying if the model rejects a parameter.
+
+    Each retry drops the most recently added fallback key so that
+    calls can succeed even when the model doesn't support a given
+    optional parameter.
+
+    Args:
+        client: OpenAI client instance.
+        kwargs: Keyword arguments for the API call.
+        fallback_keys: Ordered list of keys that may be unsupported.
+                       The last key is removed first on failure.
+
+    Returns:
+        The API response object.
+    """
+    for attempt in range(len(fallback_keys) + 1):
+        try:
+            return client.responses.create(**kwargs)
+        except APIError as e:
+            if attempt < len(fallback_keys) and e.status_code == 400:
+                key = fallback_keys.pop()
+                kwargs.pop(key, None)
+                continue
+            raise
+
+    raise RuntimeError("OpenAI API call failed after retrying without optional parameters")
