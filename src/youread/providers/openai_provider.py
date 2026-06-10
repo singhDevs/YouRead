@@ -1,5 +1,7 @@
 """OpenAI provider for YouRead."""
 
+from typing import Optional
+
 from openai import OpenAI
 from openai import APIError
 
@@ -9,18 +11,22 @@ def call_openai(
     model: str,
     system_prompt: str,
     user_prompt: str,
-    max_tokens: int = 8000,
-    temperature: float = 0.3,
+    max_tokens: Optional[int] = None,
+    temperature: Optional[float] = None,
 ) -> str:
     """Generate text using the OpenAI API.
+
+    Optional parameters (max_tokens, temperature) are sent to the API
+    only when the caller provides them.  If the chosen model rejects
+    a parameter, the provider retries without it before raising.
 
     Args:
         api_key: OpenAI API key.
         model: Model name (e.g., "gpt-5").
         system_prompt: System instructions.
         user_prompt: User input content.
-        max_tokens: Maximum response tokens.
-        temperature: Sampling temperature.
+        max_tokens: Maximum response tokens (model-dependent).
+        temperature: Sampling temperature (model-dependent).
 
     Returns:
         The generated text.
@@ -66,11 +72,12 @@ def _call_responses(
     Returns:
         The API response object.
     """
-    for attempt in range(len(fallback_keys) + 1):
+    total = len(fallback_keys)
+    for attempt in range(total + 1):
         try:
             return client.responses.create(**kwargs)
         except APIError as e:
-            if attempt < len(fallback_keys) and e.status_code == 400:
+            if attempt < total and e.status_code == 400:
                 key = fallback_keys.pop()
                 kwargs.pop(key, None)
                 continue
