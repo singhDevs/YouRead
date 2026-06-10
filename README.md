@@ -2,7 +2,7 @@
 
 Turn a YouTube video into a readable Markdown article.
 
-Built for people who prefer reading over watching — technical talks, podcasts, discussions. It goes beyond summaries; the goal is an article detailed enough that you usually don't need to watch the video.
+Built for people who prefer reading over watching, who got 100s of youtube tabs opened but none watched — technical talks, podcasts, discussions. It goes beyond summaries; the goal is an article detailed enough that you usually don't need to watch the video.
 
 ## Quick Start
 
