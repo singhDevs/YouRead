@@ -1,51 +1,102 @@
 # YouRead
 
-A **CLI** tool that converts YouTube videos into comprehensive, readable markdown articles.
+Turn a YouTube video into a readable Markdown article.
 
-## Problem
+Built for people who prefer reading over watching — technical talks, podcasts, discussions. It goes beyond summaries; the goal is an article detailed enough that you usually don't need to watch the video.
 
-- Watching 15-45 minute YouTube videos daily is time-consuming
-- Existing tools produce shallow summaries (max 2,500 words) optimized for SEO
-- No tool focuses on complete knowledge retention over content repurposing
+## Quick Start
 
-## Solution
+```bash
+pip install .
+youread config set --provider openai --set-api-key
+youread run "https://youtube.com/watch?v=VIDEO_ID"
+```
 
-**YouRead** extracts transcripts from YouTube videos and uses LLM API to generate comprehensive articles that replace the need to watch the video entirely.
+## Install
 
-## Prerequisites
+Requires Python 3.10+.
 
-- Python 3.10+
-- LLM API key
+```bash
+pip install .
+# or for development:
+pip install -e .
+```
 
-## Setup
+## Configure
 
-1. Clone the repository
+YouRead supports OpenAI and Gemini. Defaults:
 
-2. Create and activate virtual environment:
-   ```bash
-   python -m venv venv
+```yaml
+llm:
+  provider: openai
+  model: gpt-5
+  max_tokens: 8000
+  temperature: 0.3
+output:
+  directory: ./output
+processing:
+  remove_sponsors: true
+```
 
-   # Windows
-   venv\Scripts\activate
+```bash
+# set provider + model
+youread config set --provider openai --model gpt-5
+# set API key (secure prompt, no echo)
+youread config set --set-api-key
+# view current config
+youread config show
+# check if active provider has a key
+youread config check
+```
 
-   # macOS/Linux
-   source venv/bin/activate
-   ```
+Provider/model pairs are validated at save time — `--provider gemini --model gpt-5` is rejected immediately.
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Usage
 
-4. Configure API key:
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your LLM API key
-   ```
+```bash
+youread run "https://youtube.com/watch?v=VIDEO_ID"
 
+# with options
+youread run "URL" --mode detailed
+youread run "URL" --prompt "Focus on code examples"
+youread run "URL" --model gemini-2.5-flash
+youread run "URL" --no-sponsorblock
+```
 
-## Documentation
-- [Quality Metrics](doc/QUALITY_METRICS.md) — How article quality is measured
+| Flag | What it does |
+|------|-------------|
+| `--mode summary\|standard\|detailed` | Article depth (default: standard) |
+| `--prompt "..."` | Custom instructions appended to the system prompt |
+| `--model <name>` | Override configured model for one run |
+| `--no-sponsorblock` | Skip sponsor segment removal |
 
-## License
-Personal project — not yet licensed for distribution.
+Output goes to the configured directory (`./output` by default). After generation, YouRead asks whether to open the file.
+
+## Supported Providers
+
+| Provider | Example Model | Env variable |
+|----------|---------------|-------------|
+| OpenAI | `gpt-5` | `OPENAI_API_KEY` |
+| Gemini | `gemini-2.5-flash` | `GEMINI_API_KEY` |
+
+## Limitations
+
+YouRead is transcript-only. It doesn't see video frames, slides, or code on screen.
+
+| Situation | Outcome |
+|-----------|---------|
+| No transcript | Can't process |
+| Auto-generated captions | Quality suffers |
+| Visual-heavy content | Details missed |
+| Code not spoken | Won't appear |
+| Non-English video | English captions only |
+
+For best results, use videos where the speaker explains things verbally.
+
+## Troubleshooting
+
+**`No API key found`** — `youread config check` then `youread config set --set-api-key`.
+
+**`Provider mismatch`** — You paired `--provider gemini` with `--model gpt-5`. Use matching pairs: `openai` + `gpt-5`, `gemini` + `gemini-2.5-flash`.
+
+**`No transcript available`** — Video has no accessible captions.
