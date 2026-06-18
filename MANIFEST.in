@@ -1,0 +1,12 @@
+exclude .env
+exclude .env.*
+global-exclude *.env
+global-exclude *.env.*
+prune api-test
+prune build
+prune dist
+prune doc
+prune output
+prune venv
+prune .claude
+prune .github

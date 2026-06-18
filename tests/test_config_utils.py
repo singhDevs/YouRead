@@ -15,6 +15,7 @@ from youread.providers import call_llm, get_provider_env_var, infer_provider
 from youread.utils.config import (
     check_provider_api_key,
     get_api_key_for_provider,
+    get_config_dir,
     get_missing_api_keys_message,
     load_config,
     save_config_values,
@@ -26,6 +27,7 @@ class ConfigUtilsTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         self.base_path = Path(self.temp_dir.name)
+        self.system_path_cls = type(Path())
         self.settings_path = self.base_path / "settings.yaml"
         self.dotenv_path = self.base_path / ".env"
 
@@ -38,17 +40,15 @@ class ConfigUtilsTests(unittest.TestCase):
             return_value=(self.settings_path, self.dotenv_path),
         )
 
-    def test_load_config_uses_defaults_and_environment_api_keys(self) -> None:
+    def test_load_config_uses_defaults_and_managed_dotenv_api_keys(self) -> None:
         self.write_settings("{}\n")
+        self.dotenv_path.write_text(
+            'OPENAI_API_KEY="openai-secret"\nGEMINI_API_KEY="gemini-secret"\n',
+            encoding="utf-8",
+        )
 
         with (
             self.patch_paths(),
-            patch("youread.utils.config.load_dotenv"),
-            patch.dict(
-                os.environ,
-                {"OPENAI_API_KEY": "openai-secret", "GEMINI_API_KEY": "gemini-secret"},
-                clear=True,
-            ),
         ):
             config = load_config()
 
@@ -81,8 +81,6 @@ class ConfigUtilsTests(unittest.TestCase):
 
         with (
             self.patch_paths(),
-            patch("youread.utils.config.load_dotenv"),
-            patch.dict(os.environ, {}, clear=True),
         ):
             config = load_config()
 
@@ -94,10 +92,18 @@ class ConfigUtilsTests(unittest.TestCase):
         self.assertFalse(config.processing.remove_sponsors)
         self.assertEqual(config.api_keys, {})
 
-    def test_load_config_raises_for_missing_settings_file(self) -> None:
-        with self.patch_paths():
-            with self.assertRaises(FileNotFoundError):
-                load_config()
+    def test_load_config_bootstraps_default_settings_file(self) -> None:
+        with (
+            self.patch_paths(),
+            patch(
+                "youread.utils.config._get_default_settings_text",
+                return_value="llm:\n  provider: openai\n",
+            ),
+        ):
+            config = load_config()
+
+        self.assertTrue(self.settings_path.exists())
+        self.assertEqual(config.llm.provider, "openai")
 
     def test_save_config_values_persists_yaml_and_dotenv(self) -> None:
         self.write_settings("{}\n")
@@ -128,11 +134,10 @@ class ConfigUtilsTests(unittest.TestCase):
 
     def test_check_provider_api_key_and_get_api_key_for_provider(self) -> None:
         self.write_settings("{}\n")
+        self.dotenv_path.write_text('OPENAI_API_KEY="openai-secret"\n', encoding="utf-8")
 
         with (
             self.patch_paths(),
-            patch("youread.utils.config.load_dotenv"),
-            patch.dict(os.environ, {"OPENAI_API_KEY": "openai-secret"}, clear=True),
         ):
             config = load_config()
 
@@ -146,6 +151,39 @@ class ConfigUtilsTests(unittest.TestCase):
         self.assertIn("GEMINI_API_KEY", message)
         self.assertIn("--set-api-key", message)
         self.assertNotIn("--api-key <", message)
+
+    def test_load_config_ignores_ambient_environment_variables(self) -> None:
+        self.write_settings("{}\n")
+
+        with (
+            self.patch_paths(),
+            patch.dict(os.environ, {"OPENAI_API_KEY": "ambient-secret"}, clear=True),
+        ):
+            config = load_config()
+
+        self.assertEqual(config.api_keys, {})
+
+    def test_get_config_dir_ignores_empty_appdata_on_windows(self) -> None:
+        with (
+            patch("youread.utils.config.os.name", "nt"),
+            patch("youread.utils.config.sys.platform", "win32"),
+            patch.dict(os.environ, {"APPDATA": ""}, clear=True),
+            patch("youread.utils.config.Path.home", return_value=self.system_path_cls("C:/Users/tester")),
+        ):
+            config_dir = get_config_dir()
+
+        self.assertEqual(config_dir, Path("C:/Users/tester/AppData/Roaming/youread"))
+
+    def test_get_config_dir_ignores_empty_xdg_config_home(self) -> None:
+        with (
+            patch("youread.utils.config.os.name", "posix"),
+            patch("youread.utils.config.sys.platform", "linux"),
+            patch.dict(os.environ, {"XDG_CONFIG_HOME": ""}, clear=True),
+            patch("youread.utils.config.Path.home", return_value=self.system_path_cls("C:/Users/tester")),
+        ):
+            config_dir = get_config_dir()
+
+        self.assertEqual(config_dir, Path("C:/Users/tester/.config/youread"))
 
 
 class ProviderHelperTests(unittest.TestCase):

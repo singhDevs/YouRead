@@ -1,12 +1,14 @@
 """Configuration loading and saving utilities."""
 
 import os
+import sys
 from dataclasses import dataclass, field
+from importlib.resources import files
 from pathlib import Path
 from typing import Optional
 
 import yaml
-from dotenv import load_dotenv, set_key
+from dotenv import dotenv_values, set_key
 
 from ..providers import PROVIDERS, get_provider_env_var
 
@@ -57,35 +59,79 @@ class Config:
     api_keys: dict[str, str] = field(default_factory=dict)
 
 
+def get_config_dir() -> Path:
+    """Return the per-user config directory for YouRead."""
+    appdata = os.environ.get("APPDATA") or None
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME") or None
+
+    if os.name == "nt":
+        base_dir = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+    elif sys.platform == "darwin":
+        base_dir = Path.home() / "Library" / "Application Support"
+    else:
+        base_dir = Path(xdg_config_home) if xdg_config_home else Path.home() / ".config"
+
+    return base_dir / "youread"
+
+
 def get_config_paths() -> tuple[Path, Path]:
-    """Return resolved file paths for config files.
+    """Return resolved file paths for user-managed config files.
 
     Returns:
         Tuple of (settings_yaml_path, dotenv_path).
     """
-    settings_path = Path(__file__).parent.parent / "config" / "settings.yaml"
-    dotenv_path = Path(__file__).parent.parent.parent.parent / ".env"
+    config_dir = get_config_dir()
+    settings_path = config_dir / "settings.yaml"
+    dotenv_path = config_dir / ".env"
     return settings_path, dotenv_path
 
 
+def _get_default_settings_text() -> str:
+    """Read the packaged default settings template."""
+    return files("youread").joinpath("config/settings.yaml").read_text(encoding="utf-8")
+
+
+def ensure_config_files() -> tuple[Path, Path]:
+    """Create the user config directory and default settings file if needed."""
+    settings_path, dotenv_path = get_config_paths()
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not settings_path.exists():
+        settings_path.write_text(_get_default_settings_text(), encoding="utf-8")
+
+    return settings_path, dotenv_path
+
+
+def _ensure_private_env_file(dotenv_path: Path) -> None:
+    """Create the managed .env file and restrict permissions where possible."""
+    if not dotenv_path.exists():
+        dotenv_path.touch()
+
+    if os.name != "nt":
+        try:
+            dotenv_path.chmod(0o600)
+        except OSError:
+            pass
+
+
 def load_config(config_path: Optional[Path] = None) -> Config:
-    """Load configuration from settings.yaml and environment variables.
+    """Load configuration from settings.yaml and YouRead's managed .env file.
 
     Args:
         config_path: Optional path to settings.yaml. If not provided,
-                     defaults to config/settings.yaml relative to project root.
+                     defaults to the user config directory.
 
     Returns:
         Config object with all settings loaded.
 
     Raises:
-        FileNotFoundError: If settings.yaml doesn't exist.
+        FileNotFoundError: If an explicit config_path doesn't exist.
     """
-    load_dotenv()
-
     if config_path is None:
-        settings_path, _ = get_config_paths()
+        settings_path, dotenv_path = ensure_config_files()
         config_path = settings_path
+    else:
+        _, dotenv_path = get_config_paths()
 
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
@@ -93,7 +139,7 @@ def load_config(config_path: Optional[Path] = None) -> Config:
     with open(config_path, "r", encoding="utf-8") as f:
         settings = yaml.safe_load(f) or {}
 
-    api_keys = _load_api_keys()
+    api_keys = _load_api_keys(dotenv_path)
     llm_settings = settings.get("llm", {})
     output_settings = settings.get("output", {})
     processing_settings = settings.get("processing", {})
@@ -115,16 +161,17 @@ def load_config(config_path: Optional[Path] = None) -> Config:
     )
 
 
-def _load_api_keys() -> dict[str, str]:
-    """Load API keys from environment variables.
+def _load_api_keys(dotenv_path: Path) -> dict[str, str]:
+    """Load API keys from YouRead's managed .env file.
 
     Returns:
         Dictionary of provider name -> API key.
     """
+    env_values = dotenv_values(dotenv_path) if dotenv_path.exists() else {}
     api_keys: dict[str, str] = {}
     for provider in PROVIDERS.keys():
         env_var = get_provider_env_var(provider)
-        key = os.getenv(env_var)
+        key = env_values.get(env_var)
         if key:
             api_keys[provider] = key
     return api_keys
@@ -179,7 +226,7 @@ def save_config_values(
         resolved_provider: Provider name used to determine the env var
                           name when saving api_key (e.g., "openai" → OPENAI_API_KEY).
     """
-    settings_path, dotenv_path = get_config_paths()
+    settings_path, dotenv_path = ensure_config_files()
 
     with open(settings_path, "r", encoding="utf-8") as f:
         settings = yaml.safe_load(f) or {}
@@ -208,9 +255,9 @@ def save_config_values(
 
     if api_key is not None and resolved_provider is not None:
         env_var = get_provider_env_var(resolved_provider)
-        if not dotenv_path.exists():
-            dotenv_path.touch()
+        _ensure_private_env_file(dotenv_path)
         set_key(str(dotenv_path), env_var, api_key)
+        _ensure_private_env_file(dotenv_path)
 
 
 def get_missing_api_keys_message(provider: str) -> str:
@@ -225,7 +272,7 @@ def get_missing_api_keys_message(provider: str) -> str:
     env_var = get_provider_env_var(provider)
     return (
         f"\n[yellow]API Key Missing:[/yellow] No API key found for provider '{provider}'.\n"
-        f"Please set your {env_var} in the .env file or run:\n"
+        f"Please save your {env_var} to YouRead's managed .env file by running:\n"
         f"  youread config set --provider {provider} --set-api-key\n"
         f"To get an API key, visit:\n"
         f"  - OpenAI: https://platform.openai.com/api-keys\n"
