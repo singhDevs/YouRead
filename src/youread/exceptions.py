@@ -40,6 +40,6 @@ class APIKeyMissingError(YouReadError):
         env_var = f"{provider.upper()}_API_KEY"
         super().__init__(
             f"API key for '{provider}' not found. "
-            f"Set {env_var} in your .env file, or use: "
+            f"Save {env_var} to YouRead's managed .env file, or use: "
             f"youread config set --provider {provider} --set-api-key"
         )

@@ -163,7 +163,7 @@ def config_set(
         help="Enable/disable sponsor segment removal.",
     ),
 ) -> None:
-    """Update YouRead configuration. Settings are persisted to config files."""
+    """Update YouRead configuration. Settings are persisted to user config files."""
     if (
         provider is None
         and model is None
@@ -276,7 +276,7 @@ def config_set(
 
     if api_key is not None and resolved_provider:
         env_var = get_provider_env_var(resolved_provider)
-        console.print(f"[green]+[/green] {env_var} saved to .env")
+        console.print(f"[green]+[/green] {env_var} saved to YouRead's managed .env")
 
     console.print()
     config_show()
