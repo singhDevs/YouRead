@@ -15,6 +15,7 @@ from youread.providers import call_llm, get_provider_env_var, infer_provider
 from youread.utils.config import (
     check_provider_api_key,
     get_api_key_for_provider,
+    get_config_dir,
     get_missing_api_keys_message,
     load_config,
     save_config_values,
@@ -26,6 +27,7 @@ class ConfigUtilsTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         self.base_path = Path(self.temp_dir.name)
+        self.system_path_cls = type(Path())
         self.settings_path = self.base_path / "settings.yaml"
         self.dotenv_path = self.base_path / ".env"
 
@@ -160,6 +162,28 @@ class ConfigUtilsTests(unittest.TestCase):
             config = load_config()
 
         self.assertEqual(config.api_keys, {})
+
+    def test_get_config_dir_ignores_empty_appdata_on_windows(self) -> None:
+        with (
+            patch("youread.utils.config.os.name", "nt"),
+            patch("youread.utils.config.sys.platform", "win32"),
+            patch.dict(os.environ, {"APPDATA": ""}, clear=True),
+            patch("youread.utils.config.Path.home", return_value=self.system_path_cls("C:/Users/tester")),
+        ):
+            config_dir = get_config_dir()
+
+        self.assertEqual(config_dir, Path("C:/Users/tester/AppData/Roaming/youread"))
+
+    def test_get_config_dir_ignores_empty_xdg_config_home(self) -> None:
+        with (
+            patch("youread.utils.config.os.name", "posix"),
+            patch("youread.utils.config.sys.platform", "linux"),
+            patch.dict(os.environ, {"XDG_CONFIG_HOME": ""}, clear=True),
+            patch("youread.utils.config.Path.home", return_value=self.system_path_cls("C:/Users/tester")),
+        ):
+            config_dir = get_config_dir()
+
+        self.assertEqual(config_dir, Path("C:/Users/tester/.config/youread"))
 
 
 class ProviderHelperTests(unittest.TestCase):

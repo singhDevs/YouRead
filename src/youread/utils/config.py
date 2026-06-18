@@ -1,6 +1,7 @@
 """Configuration loading and saving utilities."""
 
 import os
+import sys
 from dataclasses import dataclass, field
 from importlib.resources import files
 from pathlib import Path
@@ -60,12 +61,15 @@ class Config:
 
 def get_config_dir() -> Path:
     """Return the per-user config directory for YouRead."""
+    appdata = os.environ.get("APPDATA") or None
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME") or None
+
     if os.name == "nt":
-        base_dir = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
-    elif os.sys.platform == "darwin":
+        base_dir = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+    elif sys.platform == "darwin":
         base_dir = Path.home() / "Library" / "Application Support"
     else:
-        base_dir = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+        base_dir = Path(xdg_config_home) if xdg_config_home else Path.home() / ".config"
 
     return base_dir / "youread"
 
@@ -104,7 +108,10 @@ def _ensure_private_env_file(dotenv_path: Path) -> None:
         dotenv_path.touch()
 
     if os.name != "nt":
-        dotenv_path.chmod(0o600)
+        try:
+            dotenv_path.chmod(0o600)
+        except OSError:
+            pass
 
 
 def load_config(config_path: Optional[Path] = None) -> Config:

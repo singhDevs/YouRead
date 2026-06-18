@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -67,6 +68,17 @@ class SecretHygieneTests(unittest.TestCase):
 
         self.assertIn(0o600, chmod_calls)
 
+    def test_managed_env_file_permission_hardening_is_best_effort(self) -> None:
+        with (
+            self.patch_paths(),
+            patch("youread.utils.config.os.name", "posix"),
+            patch("pathlib.Path.chmod", side_effect=PermissionError("denied")),
+        ):
+            save_config_values(api_key="super-secret", resolved_provider="openai")
+
+        dotenv_text = self.dotenv_path.read_text(encoding="utf-8")
+        self.assertIn("OPENAI_API_KEY", dotenv_text)
+
     def test_root_gitignore_blocks_secret_files(self) -> None:
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         self.assertIn(".env", gitignore)
@@ -103,6 +115,9 @@ class SecretHygieneTests(unittest.TestCase):
         self._assert_archive_names_are_safe(names)
 
     def test_repository_tracked_files_do_not_include_secret_files(self) -> None:
+        if shutil.which("git") is None:
+            self.skipTest("git is not available")
+
         result = subprocess.run(
             ["git", "ls-files"],
             cwd=ROOT,
@@ -121,9 +136,11 @@ class SecretHygieneTests(unittest.TestCase):
 
     def _assert_archive_names_are_safe(self, names: list[str]) -> None:
         normalized_names = {Path(name).name for name in names}
+        normalized_paths = [name.replace("\\", "/") for name in names]
         self.assertTrue(FORBIDDEN_ARCHIVE_NAMES.isdisjoint(normalized_names))
-        self.assertFalse(any(name.endswith(".env") for name in names))
-        self.assertFalse(any("/.env" in name.replace("\\", "/") for name in names))
+        self.assertFalse(any(path.endswith(".env") for path in normalized_paths))
+        self.assertFalse(any(Path(path).name.startswith(".env.") for path in normalized_paths))
+        self.assertFalse(any("/.env" in path for path in normalized_paths))
 
 
 if __name__ == "__main__":
