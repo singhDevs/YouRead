@@ -43,7 +43,7 @@ console = Console()
 def version_callback(value: bool) -> None:
     """Print version and exit."""
     if value:
-        console.print("[bold]YouRead[/bold] v0.1.0")
+        console.print("[bold]YouRead[/bold] v0.2.0")
         raise typer.Exit()
 
 
