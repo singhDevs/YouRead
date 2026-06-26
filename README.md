@@ -15,6 +15,8 @@ youread run "https://youtube.com/watch?v=VIDEO_ID"
 
 ## Install
 
+Visit PyPi page: https://pypi.org/project/youread/
+
 Requires Python 3.10+.
 
 ```bash
