@@ -8,7 +8,7 @@ Built for people who prefer reading over watching, who got 100s of youtube tabs 
 ## Quick Start
 
 ```bash
-pip install .
+pip install youread
 youread config set --provider openai --set-api-key
 youread run "https://youtube.com/watch?v=VIDEO_ID"
 ```
@@ -18,9 +18,7 @@ youread run "https://youtube.com/watch?v=VIDEO_ID"
 Requires Python 3.10+.
 
 ```bash
-pip install .
-# or for development:
-pip install -e .
+pip install youread
 ```
 
 ## Configure
@@ -42,10 +40,13 @@ processing:
 ```bash
 # set provider + model
 youread config set --provider openai --model gpt-5
+
 # set API key (secure prompt, no echo)
 youread config set --set-api-key
+
 # view current config
 youread config show
+
 # check if active provider has a key
 youread config check
 ```
@@ -79,20 +80,6 @@ Output goes to the configured directory (`./output` by default). After generatio
 |----------|---------------|-------------|
 | OpenAI | `gpt-5` | `OPENAI_API_KEY` |
 | Gemini | `gemini-2.5-flash` | `GEMINI_API_KEY` |
-
-## Limitations
-
-YouRead is transcript-only. It doesn't see video frames, slides, or code on screen.
-
-| Situation | Outcome |
-|-----------|---------|
-| No transcript | Can't process |
-| Auto-generated captions | Quality suffers |
-| Visual-heavy content | Details missed |
-| Code not spoken | Won't appear |
-| Non-English video | English captions only |
-
-For best results, use videos where the speaker explains things verbally.
 
 ## Troubleshooting
 
