@@ -71,10 +71,13 @@ def sanitize_filename(title: str) -> str:
     # Trim whitespace
     sanitized = sanitized.strip()
 
-    # Limit length (leave room for .md extension)
-    max_length = 200
-    if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length].rsplit(' ', 1)[0]
+    # Limit UTF-8 byte length (leave room for .md extension on filesystems
+    # that enforce 255-byte filename component limits)
+    max_filename_bytes = 255
+    extension_bytes = len(".md".encode("utf-8"))
+    max_title_bytes = max_filename_bytes - extension_bytes
+    if len(sanitized.encode("utf-8")) > max_title_bytes:
+        sanitized = sanitized.encode("utf-8")[:max_title_bytes].decode("utf-8", errors="ignore").rstrip()
 
     # Fallback if empty
     if not sanitized:

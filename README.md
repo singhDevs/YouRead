@@ -18,8 +18,26 @@ youread run "https://youtube.com/watch?v=VIDEO_ID"
 Visit PyPi page: https://pypi.org/project/youread/
 
 Requires Python 3.10+.
+Supports Windows, macOS, and Linux.
+
+### Recommended (Linux/macOS/Windows): pipx
 
 ```bash
+pipx install youread
+```
+
+On Ubuntu/Debian, install prerequisites first:
+
+```bash
+sudo apt install -y pipx python3-venv xdg-utils
+pipx ensurepath
+```
+
+### Alternative: virtual environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install youread
 ```
 
