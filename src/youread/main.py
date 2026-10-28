@@ -47,16 +47,21 @@ def version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-def open_file(file_path: Path) -> None:
+def open_file(file_path: Path) -> bool:
     """Open a file with the system default application."""
     path = str(file_path)
 
-    if sys.platform.startswith("win"):
-        os.startfile(path)
-    elif sys.platform == "darwin":
-        subprocess.run(["open", path], check=True)
-    else:
-        subprocess.run(["xdg-open", path], check=True)
+    try:
+        if sys.platform.startswith("win"):
+            os.startfile(path)
+        elif sys.platform == "darwin":
+            subprocess.run(["open", path], check=True)
+        else:
+            subprocess.run(["xdg-open", path], check=True)
+    except (AttributeError, FileNotFoundError, OSError, subprocess.CalledProcessError):
+        return False
+
+    return True
 
 
 def create_progress() -> Progress:
@@ -474,8 +479,11 @@ def run(
 
         console.print()
         if typer.confirm("Open the article?", default=False):
-            open_file(output_path)
-            console.print("[dim]Opening file...[/dim]")
+            if open_file(output_path):
+                console.print("[dim]Opening file...[/dim]")
+            else:
+                console.print("[yellow]Could not open file automatically.[/yellow]")
+                console.print(f"[dim]Open it manually at: {output_path}[/dim]")
 
         console.print("\n[bold green]Done![/bold green]")
 

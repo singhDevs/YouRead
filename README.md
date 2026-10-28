@@ -18,6 +18,7 @@ youread run "https://youtube.com/watch?v=VIDEO_ID"
 Visit PyPi page: https://pypi.org/project/youread/
 
 Requires Python 3.10+.
+Supports Windows, macOS, and Linux.
 
 ```bash
 pip install youread

@@ -185,6 +185,16 @@ class ConfigUtilsTests(unittest.TestCase):
 
         self.assertEqual(config_dir, Path("C:/Users/tester/.config/youread"))
 
+    def test_get_config_dir_uses_xdg_config_home_on_linux(self) -> None:
+        with (
+            patch("youread.utils.config.os.name", "posix"),
+            patch("youread.utils.config.sys.platform", "linux"),
+            patch.dict(os.environ, {"XDG_CONFIG_HOME": "/home/tester/.xdg-config"}, clear=True),
+        ):
+            config_dir = get_config_dir()
+
+        self.assertEqual(config_dir, Path("/home/tester/.xdg-config/youread"))
+
 
 class ProviderHelperTests(unittest.TestCase):
     def test_infer_provider_supports_known_prefixes(self) -> None:

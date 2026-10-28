@@ -10,7 +10,7 @@ if str(SRC) not in sys.path:
 
 from typer.testing import CliRunner
 
-from youread.main import app
+from youread.main import app, open_file
 from youread.utils.config import Config, LLMConfig, OutputConfig, ProcessingConfig
 
 
@@ -142,6 +142,27 @@ class MainCliConfigTests(unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
         self.assertIn("Invalid YouTube URL: invalid-url", result.stdout)
         self.assertNotIn("Unexpected error", result.stdout)
+
+
+class OpenFileTests(unittest.TestCase):
+    def test_open_file_uses_xdg_open_on_linux(self) -> None:
+        with (
+            patch("youread.main.sys.platform", "linux"),
+            patch("youread.main.subprocess.run") as run_mock,
+        ):
+            result = open_file(Path("/tmp/article.md"))
+
+        self.assertTrue(result)
+        run_mock.assert_called_once_with(["xdg-open", "/tmp/article.md"], check=True)
+
+    def test_open_file_returns_false_if_xdg_open_unavailable(self) -> None:
+        with (
+            patch("youread.main.sys.platform", "linux"),
+            patch("youread.main.subprocess.run", side_effect=FileNotFoundError),
+        ):
+            result = open_file(Path("/tmp/article.md"))
+
+        self.assertFalse(result)
 
 
 if __name__ == "__main__":
