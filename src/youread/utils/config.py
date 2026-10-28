@@ -64,7 +64,7 @@ def get_config_dir() -> Path:
     appdata = os.environ.get("APPDATA") or None
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME") or None
 
-    if os.name == "nt":
+    if sys.platform.startswith("win"):
         base_dir = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
     elif sys.platform == "darwin":
         base_dir = Path.home() / "Library" / "Application Support"

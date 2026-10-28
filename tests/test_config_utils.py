@@ -165,7 +165,6 @@ class ConfigUtilsTests(unittest.TestCase):
 
     def test_get_config_dir_ignores_empty_appdata_on_windows(self) -> None:
         with (
-            patch("youread.utils.config.os.name", "nt"),
             patch("youread.utils.config.sys.platform", "win32"),
             patch.dict(os.environ, {"APPDATA": ""}, clear=True),
             patch("youread.utils.config.Path.home", return_value=self.system_path_cls("C:/Users/tester")),
@@ -176,7 +175,6 @@ class ConfigUtilsTests(unittest.TestCase):
 
     def test_get_config_dir_ignores_empty_xdg_config_home(self) -> None:
         with (
-            patch("youread.utils.config.os.name", "posix"),
             patch("youread.utils.config.sys.platform", "linux"),
             patch.dict(os.environ, {"XDG_CONFIG_HOME": ""}, clear=True),
             patch("youread.utils.config.Path.home", return_value=self.system_path_cls("C:/Users/tester")),
@@ -187,7 +185,6 @@ class ConfigUtilsTests(unittest.TestCase):
 
     def test_get_config_dir_uses_xdg_config_home_on_linux(self) -> None:
         with (
-            patch("youread.utils.config.os.name", "posix"),
             patch("youread.utils.config.sys.platform", "linux"),
             patch.dict(os.environ, {"XDG_CONFIG_HOME": "/home/tester/.xdg-config"}, clear=True),
         ):
