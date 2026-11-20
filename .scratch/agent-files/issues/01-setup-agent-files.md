@@ -19,13 +19,15 @@ conventions for issue tracking, triage, and domain documentation.
 
 ## Acceptance criteria
 
-- [ ] `AGENTS.md` links agents to issue-tracker, triage, and domain guidance.
-- [ ] `docs/agents/issue-tracker.md` defines ticket and spec conventions.
-- [ ] `docs/agents/triage-labels.md` maps all five default triage roles.
-- [ ] `docs/agents/domain.md` explains the domain layout and handles missing docs.
-- [ ] Commits contain only this ticket and the agent guidance files.
+- [x] `AGENTS.md` links agents to issue-tracker, triage, and domain guidance.
+- [x] `docs/agents/issue-tracker.md` defines ticket and spec conventions.
+- [x] `docs/agents/triage-labels.md` maps all five default triage roles.
+- [x] `docs/agents/domain.md` explains the domain layout and handles missing docs.
+- [x] Commits contain only this ticket and the agent guidance files.
 
 ## Comments
 
 - Keep release publishing, package metadata, version, CLI, and README changes
   outside this issue.
+- Implemented on `01-setup-agent-files`. Verified guidance references, all five
+  triage roles, and preservation of unrelated working changes.
